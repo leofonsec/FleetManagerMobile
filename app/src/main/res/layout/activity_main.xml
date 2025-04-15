@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <EditText
+        android:id="@+id/editTextTextEmailAddress"
+        android:layout_width="302dp"
+        android:layout_height="87dp"
+        android:ems="10"
+        android:inputType="textEmailAddress"
+        android:labelFor="@id/editTextTextEmailAddress" />
+
+    <EditText
+        android:id="@+id/editTextTextPassword"
+        android:layout_width="303dp"
+        android:layout_height="68dp"
+        android:ems="10"
+        android:inputType="textPassword"
+        android:labelFor="@id/editTextTextPassword"/>
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="247dp"
+        android:layout_height="wrap_content"
+        android:text="@string/app_name" />
+</LinearLayout>
