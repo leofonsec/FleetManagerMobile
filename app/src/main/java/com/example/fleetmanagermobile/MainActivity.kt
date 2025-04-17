@@ -1,5 +1,10 @@
 package com.example.fleetmanagermobile
 
+import android.annotation.SuppressLint
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,21 +16,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.fleetmanagermobile.ui.theme.FleetManagerMobileTheme
+import androidx.constraintlayout.compose.ConstraintLayout
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        criarCanalDeNotificacao(this)
         enableEdgeToEdge()
         setContent {
             FleetManagerMobileTheme {
@@ -34,6 +44,44 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+private fun criarCanalDeNotificacao(context: Context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val nome = "Canal de Reserva"
+        val descricao = "Notificações de reservas de veículos"
+        val importancia = NotificationManager.IMPORTANCE_DEFAULT
+        val canal = NotificationChannel("reserva_channel_id", nome, importancia).apply {
+            description = descricao
+        }
+        val notificationManager: NotificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(canal)
+    }
+}
+
+@SuppressLint("MissingPermission")
+fun enviarNotificacao(context: Context) {
+    val notificationManager = NotificationManagerCompat.from(context)
+
+    // Criar canal de notificação (se ainda não existir)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val channel = NotificationChannel(
+            "reserva_channel_id",
+            "Canal de Reserva",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    val builder = NotificationCompat.Builder(context, "reserva_channel_id")
+        .setSmallIcon(android.R.drawable.ic_dialog_info)
+        .setContentTitle("Reserva concluída")
+        .setContentText("O veículo foi reservado com sucesso.")
+        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+
+    notificationManager.notify(1, builder.build())
+}
+
 
 @Composable
 fun App() {
@@ -134,7 +182,7 @@ fun TelaPrincipal(navController: NavHostController) {
             .background(Color(0xFFB3D9FF))
     ) {
         MenuTopo(titulo = "Resumo") {
-            navController.navigate("lista")
+            navController.navigate(it)
         }
 
         Column(
@@ -171,7 +219,7 @@ fun TelaLista(navController: NavHostController) {
             .background(Color(0xFFB3D9FF))
     ) {
         MenuTopo(titulo = "Lista Geral") {
-            navController.popBackStack()
+            navController.navigate(it)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -189,10 +237,38 @@ fun TelaLista(navController: NavHostController) {
 }
 
 @Composable
+fun TelaReserva(navController: NavHostController) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFB3D9FF))
+            .padding(0.dp,0.dp,0.dp,24.dp)
+    ) {
+        MenuTopo(titulo = "Reservar Veículo") {
+            navController.navigate(it)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Reserva de Veículo",
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            style = MaterialTheme.typography.titleMedium
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        SistemaReserva()
+    }
+}
+
+
+@Composable
 fun AppNavegacao(navController: NavHostController) {
     NavHost(navController = navController, startDestination = "principal") {
         composable("principal") { TelaPrincipal(navController) }
         composable("lista") { TelaLista(navController) }
+        composable("reserva") { TelaReserva(navController)}
     }
 }
 
@@ -302,17 +378,192 @@ fun TabelaLista() {
     }
 }
 
+data class Veiculo(
+    val chassi: String,
+    val modelo: String,
+    val km: Int,
+    val ultimaRevisao: String
+)
+@SuppressLint("MissingPermission")
+@Composable
+fun SistemaReserva() {
+
+    val context = LocalContext.current
+    val veiculos = listOf(
+        Veiculo("CHASSI0", "Pickup 1", 18000, "01/01/2025"),
+        Veiculo("CHASSI1", "SUV X", 22000, "15/02/2025"),
+        Veiculo("CHASSI2", "Hatch Z", 12500, "10/03/2025")
+    )
+    val veiculoSelecionado = remember { mutableStateOf(veiculos[0]) }
+
+    ConstraintLayout(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFB3D9FF))
+            .padding(bottom = 24.dp)
+    ) {
+        val (
+            tituloVeiculo, dropdownVeiculo, tituloModelo, textoModelo,
+            spacer1,
+            tituloKm, textoKm, tituloRevisao, textoRevisao,
+            spacer2,
+            tituloDisponibilidade, tabela,
+            textoOvernight, radioOvernight
+        ) = createRefs()
+
+        val (
+            textoDia, radioDia,
+            textoTeste, checkboxTeste,
+            botaoReservar
+        ) = createRefs()
+
+
+        // Veículo
+        Text("Veículo", style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.constrainAs(tituloVeiculo) {
+                top.linkTo(parent.top, margin = 16.dp)
+                start.linkTo(parent.start, margin = 16.dp)
+            })
+
+        Box(modifier = Modifier.constrainAs(dropdownVeiculo) {
+            top.linkTo(tituloVeiculo.bottom, margin = 4.dp)
+            start.linkTo(tituloVeiculo.start)
+        }) {
+            DropdownVeiculos(
+                veiculos = veiculos.map { it.chassi },
+                onSelecionado = { chassiSelecionado ->
+                    veiculoSelecionado.value = veiculos.first { it.chassi == chassiSelecionado }
+                }
+            )
+        }
+
+        // Spacer entre linhas
+        Spacer(modifier = Modifier
+            .height(16.dp)
+            .constrainAs(spacer1) {
+                top.linkTo(dropdownVeiculo.bottom)
+            })
+        Text(veiculoSelecionado.value.modelo,
+            modifier = Modifier.constrainAs(textoModelo) {
+                top.linkTo(tituloModelo.bottom, margin = 4.dp)
+                end.linkTo(tituloModelo.end)
+            })
+
+        Text("${veiculoSelecionado.value.km}",
+            modifier = Modifier.constrainAs(textoKm) {
+                top.linkTo(tituloKm.bottom, margin = 4.dp)
+                start.linkTo(tituloKm.start)
+            })
+
+        Text(veiculoSelecionado.value.ultimaRevisao,
+            modifier = Modifier.constrainAs(textoRevisao) {
+                top.linkTo(tituloRevisao.bottom, margin = 4.dp)
+                end.linkTo(tituloRevisao.end)
+            })
+
+        // Spacer
+        Spacer(modifier = Modifier
+            .height(16.dp)
+            .constrainAs(spacer2) {
+                top.linkTo(textoKm.bottom)
+            })
+
+        // Disponibilidade
+        Text("Disponibilidade", style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.constrainAs(tituloDisponibilidade) {
+                top.linkTo(spacer2.bottom, margin = 16.dp)
+                start.linkTo(parent.start, margin = 16.dp)
+            })
+
+        Box(modifier = Modifier.constrainAs(tabela) {
+            top.linkTo(tituloDisponibilidade.bottom, margin = 8.dp)
+            start.linkTo(parent.start)
+            end.linkTo(parent.end)
+        }) {
+            TabelaDiasSelecionaveis()
+        }
+
+        // Overnight
+        Text("Overnight", modifier = Modifier.constrainAs(textoOvernight) {
+            top.linkTo(tabela.bottom, margin = 16.dp)
+            start.linkTo(parent.start, margin = 16.dp)
+        })
+        RadioButton(selected = true, onClick = {}, modifier = Modifier.constrainAs(radioOvernight) {
+            top.linkTo(textoOvernight.top)
+            start.linkTo(textoOvernight.end, margin = 8.dp)
+        })
+
+        // Dia
+        Text("Dia", modifier = Modifier.constrainAs(textoDia) {
+            top.linkTo(textoOvernight.bottom, margin = 8.dp)
+            start.linkTo(parent.start, margin = 16.dp)
+        })
+        RadioButton(selected = false, onClick = {}, modifier = Modifier.constrainAs(radioDia) {
+            top.linkTo(textoDia.top)
+            start.linkTo(textoDia.end, margin = 8.dp)
+        })
+
+        // Teste
+        Text("Teste", modifier = Modifier.constrainAs(textoTeste) {
+            top.linkTo(textoDia.bottom, margin = 8.dp)
+            start.linkTo(parent.start, margin = 16.dp)
+        })
+        Checkbox(checked = false, onCheckedChange = {}, modifier = Modifier.constrainAs(checkboxTeste) {
+            top.linkTo(textoTeste.top)
+            start.linkTo(textoTeste.end, margin = 8.dp)
+        })
+
+        // Botão
+        Button(
+            onClick = { enviarNotificacao(context) },
+            modifier = Modifier.constrainAs(botaoReservar) {
+                top.linkTo(checkboxTeste.bottom, margin = 24.dp)
+                centerHorizontallyTo(parent)
+            }
+        ) {
+            Text("Reservar")
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MenuTopo(
-    titulo: String,
-    onMenuClick: () -> Unit
-) {
+fun MenuTopo(titulo: String, onNavigateClick: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
     TopAppBar(
         title = { Text(titulo) },
         navigationIcon = {
-            IconButton(onClick = onMenuClick) {
-                Icon(Icons.Default.Menu, contentDescription = "Menu")
+            Box {
+                IconButton(onClick = { expanded = true }) {
+                    Icon(Icons.Default.Menu, contentDescription = "Menu")
+                }
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Resumo") },
+                        onClick = {
+                            expanded = false
+                            onNavigateClick("principal")
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Lista") },
+                        onClick = {
+                            expanded = false
+                            onNavigateClick("lista")
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Reservar") },
+                        onClick = {
+                            expanded = false
+                            onNavigateClick("reserva")
+                        }
+                    )
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -321,6 +572,70 @@ fun MenuTopo(
             navigationIconContentColor = Color.White
         )
     )
+}
+
+@Composable
+fun TabelaDiasSelecionaveis() {
+    val dias = listOf("Seg", "Ter", "Qua", "Qui", "Sex")
+    val diasSelecionados = remember { mutableStateListOf<String>() }
+
+    Column {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround
+        ) {
+            dias.forEach { dia ->
+                val selecionado = dia in diasSelecionados
+                Button(
+                    onClick = {
+                        if (selecionado) diasSelecionados.remove(dia)
+                        else diasSelecionados.add(dia)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (selecionado) Color.Blue else Color.LightGray
+                    )
+                ) {
+                    Text(dia, color = Color.White)
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DropdownVeiculos(veiculos: List<String>, onSelecionado: (String) -> Unit) {
+    var expandido by remember { mutableStateOf(false) }
+    var selecionado by remember { mutableStateOf("") }
+
+    ExposedDropdownMenuBox(
+        expanded = expandido,
+        onExpandedChange = { expandido = !expandido }
+    ) {
+        TextField(
+            value = selecionado,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Selecione o veículo") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expandido) },
+            modifier = Modifier.menuAnchor()
+        )
+        ExposedDropdownMenu(
+            expanded = expandido,
+            onDismissRequest = { expandido = false }
+        ) {
+            veiculos.forEach { veiculo ->
+                DropdownMenuItem(
+                    text = { Text(veiculo) },
+                    onClick = {
+                        selecionado = veiculo
+                        expandido = false
+                        onSelecionado(veiculo)
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Preview(showBackground = true, showSystemUi = true)

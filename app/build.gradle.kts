@@ -57,9 +57,9 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-
-    // 🔥 Navigation Compose - versão explícita
     implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
