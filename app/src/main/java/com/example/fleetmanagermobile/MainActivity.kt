@@ -443,10 +443,30 @@ fun SistemaReserva() {
             .constrainAs(spacer1) {
                 top.linkTo(dropdownVeiculo.bottom)
             })
+        // Títulos
+        Text("Modelo", style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.constrainAs(tituloModelo) {
+                top.linkTo(spacer1.bottom)
+                start.linkTo(parent.start, margin = 16.dp)
+            })
+
+        Text("Km", style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.constrainAs(tituloKm) {
+                top.linkTo(spacer1.bottom)
+                start.linkTo(tituloModelo.end, margin = 16.dp)
+            })
+
+        Text("Manutenção", style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.constrainAs(tituloRevisao) {
+                top.linkTo(tituloModelo.top)
+                start.linkTo(tituloKm.end, margin = 16.dp)
+            })
+
+// Textos de valor
         Text(veiculoSelecionado.value.modelo,
             modifier = Modifier.constrainAs(textoModelo) {
                 top.linkTo(tituloModelo.bottom, margin = 4.dp)
-                end.linkTo(tituloModelo.end)
+                start.linkTo(tituloModelo.start)
             })
 
         Text("${veiculoSelecionado.value.km}",
@@ -458,7 +478,7 @@ fun SistemaReserva() {
         Text(veiculoSelecionado.value.ultimaRevisao,
             modifier = Modifier.constrainAs(textoRevisao) {
                 top.linkTo(tituloRevisao.bottom, margin = 4.dp)
-                end.linkTo(tituloRevisao.end)
+                start.linkTo(tituloRevisao.start)
             })
 
         // Spacer
@@ -469,10 +489,12 @@ fun SistemaReserva() {
             })
 
         // Disponibilidade
-        Text("Disponibilidade", style = MaterialTheme.typography.labelLarge,
+        Text(
+            "Disponibilidade",
+            style = MaterialTheme.typography.labelLarge,
             modifier = Modifier.constrainAs(tituloDisponibilidade) {
                 top.linkTo(spacer2.bottom, margin = 16.dp)
-                start.linkTo(parent.start, margin = 16.dp)
+                centerHorizontallyTo(parent)
             })
 
         Box(modifier = Modifier.constrainAs(tabela) {
