@@ -61,25 +61,31 @@ private fun criarCanalDeNotificacao(context: Context) {
 
 @SuppressLint("MissingPermission")
 fun enviarNotificacao(context: Context) {
-    val notificationManager = NotificationManagerCompat.from(context)
+    val channelId = "reserva_channel_id"
+    val notificationId = 1
 
-    // Criar canal de notificação (se ainda não existir)
+    // Criação do canal de notificação (necessário para Android 8.0+)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(
-            "reserva_channel_id",
-            "Canal de Reserva",
-            NotificationManager.IMPORTANCE_DEFAULT
-        )
+        val channelName = "Canal de Reserva"
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(channelId, channelName, importance)
+
+        // O NotificationManager (não o compat) é usado para criar canais
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
     }
 
-    val builder = NotificationCompat.Builder(context, "reserva_channel_id")
+    // Builder da notificação
+    val builder = NotificationCompat.Builder(context, channelId)
         .setSmallIcon(android.R.drawable.ic_dialog_info)
         .setContentTitle("Reserva concluída")
         .setContentText("O veículo foi reservado com sucesso.")
         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-    notificationManager.notify(1, builder.build())
+    // Exibir a notificação com NotificationManagerCompat
+    with(NotificationManagerCompat.from(context)) {
+        notify(notificationId, builder.build())
+    }
 }
 
 
@@ -465,19 +471,19 @@ fun SistemaReserva() {
 // Textos de valor
         Text(veiculoSelecionado.value.modelo,
             modifier = Modifier.constrainAs(textoModelo) {
-                top.linkTo(tituloModelo.bottom, margin = 4.dp)
+                top.linkTo(tituloModelo.bottom, margin = 6.dp)
                 start.linkTo(tituloModelo.start)
             })
 
         Text("${veiculoSelecionado.value.km}",
             modifier = Modifier.constrainAs(textoKm) {
-                top.linkTo(tituloKm.bottom, margin = 4.dp)
+                top.linkTo(tituloKm.bottom, margin = 6.dp)
                 start.linkTo(tituloKm.start)
             })
 
         Text(veiculoSelecionado.value.ultimaRevisao,
             modifier = Modifier.constrainAs(textoRevisao) {
-                top.linkTo(tituloRevisao.bottom, margin = 4.dp)
+                top.linkTo(tituloRevisao.bottom, margin = 6.dp)
                 start.linkTo(tituloRevisao.start)
             })
 
